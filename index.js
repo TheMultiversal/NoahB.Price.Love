@@ -141,6 +141,24 @@ app.post('/contact', (req, res) => {
   res.send('Thank you for your message!');
 });
 
+// Debug endpoint to inspect uploads folder
+app.get('/_debug_uploads', (req, res) => {
+  try{
+    const u = path.join(__dirname, 'uploads');
+    const files = fs.readdirSync(u);
+    return res.json({ exists: true, files });
+  }catch(err){
+    console.error('[Debug Uploads] error', err);
+    return res.json({ exists: false, error: String(err) });
+  }
+});
+
+// Global error handler to surface errors in logs for debugging
+app.use(function(err, req, res, next){
+  console.error('[Express Error]', err && err.stack ? err.stack : err);
+  res.status(500).send('Internal Server Error: ' + (err && err.message ? err.message : 'unknown'));
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
