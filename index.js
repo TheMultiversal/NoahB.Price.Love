@@ -1,0 +1,137 @@
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const app = express();
+const port = 3000;
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
+app.use(express.urlencoded({ extended: true }));
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+app.get('/about', (req, res) => {
+  res.sendFile(__dirname + '/public/about.html');
+});
+
+app.get('/books', (req, res) => {
+  res.sendFile(__dirname + '/public/books.html');
+});
+
+app.get('/books/:book', (req, res) => {
+  const book = req.params.book;
+  res.sendFile(path.join(__dirname, 'public', 'books', book, 'index.html'));
+});
+
+app.get('/books/:book/:edition', (req, res) => {
+  const book = req.params.book;
+  const edition = req.params.edition;
+  res.sendFile(path.join(__dirname, 'public', 'books', book, edition + '.html'));
+});
+
+app.get('/blog', (req, res) => {
+  res.sendFile(__dirname + '/public/blog.html');
+});
+
+app.get('/latest-entry', (req, res) => {
+  res.sendFile(__dirname + '/public/latest-entry.html');
+});
+
+app.get('/all-journals', (req, res) => {
+  res.sendFile(__dirname + '/public/all-journals.html');
+});
+
+app.get('/journal/:entry', (req, res) => {
+  const entry = req.params.entry;
+  res.sendFile(__dirname + `/public/journals/${entry}.html`);
+});
+
+app.get('/contact', (req, res) => {
+  res.sendFile(__dirname + '/public/contact.html');
+});
+
+app.get('/email-list', (req, res) => {
+  res.sendFile(__dirname + '/public/email-list.html');
+});
+
+app.get('/upload', (req, res) => {
+  res.sendFile(__dirname + '/public/upload.html');
+});
+
+app.get('/privacy', (req, res) => {
+  res.sendFile(__dirname + '/public/privacy.html');
+});
+
+app.get('/terms', (req, res) => {
+  res.sendFile(__dirname + '/public/terms.html');
+});
+
+app.get('/accessibility', (req, res) => {
+  res.sendFile(__dirname + '/public/accessibility.html');
+});
+
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (req.file) {
+    res.send('Image uploaded successfully: <img src="/uploads/' + req.file.filename + '" alt="Uploaded image">');
+  } else {
+    res.send('No file uploaded.');
+  }
+});
+
+// Upload audio (site music) and set as site's background loop audio
+const fs = require('fs');
+app.post('/upload-audio', upload.single('audio'), (req, res) => {
+  if (req.file) {
+    // Always save as site-music.mp3 (overwrite existing) to simplify player reference
+    const dest = path.join(__dirname, 'uploads', 'site-music.mp3');
+    try {
+      fs.copyFileSync(req.file.path, dest);
+      res.send('Audio uploaded successfully: <a href="/uploads/' + path.basename(dest) + '">' + path.basename(dest) + '</a>');
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Error saving audio file.');
+    }
+  } else {
+    res.send('No audio uploaded.');
+  }
+});
+
+// Endpoint to return a version identifier (mtime) for the site audio file so clients can cache-bust
+app.get('/audio-version', (req, res) => {
+  const f = path.join(__dirname, 'uploads', 'site-music.mp3');
+  fs.stat(f, (err, stat) => {
+    if(err) return res.json({ version: 0 });
+    return res.json({ version: stat.mtimeMs || (new Date(stat.mtime)).getTime() });
+  });
+});
+
+app.post('/subscribe', (req, res) => {
+  const email = req.body.email;
+  // In a real app, save to database or email service
+  console.log('New subscriber:', email);
+  res.send('Thank you for subscribing!');
+});
+
+app.post('/contact', (req, res) => {
+  const { name, email, message } = req.body;
+  // In a real app, send email or save to database
+  console.log('New contact message from:', name, email, message);
+  res.send('Thank you for your message!');
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});

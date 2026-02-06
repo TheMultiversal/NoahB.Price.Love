@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: noahb-price-web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    branch: main
+    envVars: []
+    disk: 512
+    regions:
+      - oregon

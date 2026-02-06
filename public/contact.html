@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact - Noah B. Price</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="global.css">
+  <script src="/particles.min.js"></script>
+  <script src="/background-init.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js"></script>
+  <script src="/particles-mouse.js"></script>
+  <script src="/audio-player.js"></script>
+</head>
+<body>
+  <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" style="display:none"></audio>
+  <div id="vanta-bg"></div>
+  <header>
+    <button id="nav-toggle" class="nav-toggle" aria-controls="main-nav" aria-expanded="false">☰</button>
+    <nav>
+      <ul id="main-nav" class="nav-list">
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/books">Books</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/email-list">Email List</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <h1>A Direct Line</h1>
+    </section>
+    <section>
+      <p>I read every message that comes through this page.</p>
+      <p>That does not mean I can respond to all of them immediately, or at length, but it does mean your words will be received by a human being, not filtered into irrelevance.</p>
+      <p>If you are reaching out with sincerity, you are welcome here.</p>
+    </section>
+    <section>
+      <h2>Reasons to Reach Out</h2>
+      <p>You may wish to write if:</p>
+      <ul>
+        <li>Something in the work resonated deeply and you want to share that experience</li>
+        <li>You have a thoughtful question related to the themes explored in the books or journal</li>
+        <li>You are inquiring about interviews, collaborations, or media requests</li>
+        <li>You are reaching out with a professional inquiry related to my writing</li>
+      </ul>
+      <p>This space is not designed for noise or promotion. It is meant for considered communication.</p>
+    </section>
+    <section>
+      <h2>How to Write</h2>
+      <p>When you send a message, clarity matters more than length.</p>
+      <p>Say what you need to say plainly. I do not require flattery, explanation, or performance. If your message is genuine, that will be evident.</p>
+    </section>
+    <section>
+      <h2>What to Expect</h2>
+      <p>Responses may take time. I prioritize depth over speed, both in writing and in correspondence.</p>
+      <p>If your message requires a reply, I will respond when I am able. If it does not, know that it was still read with care.</p>
+    </section>
+    <section>
+      <h2>Contact Form</h2>
+      <form action="/contact" method="post">
+        <input type="text" name="name" placeholder="Name" required style="display: block; margin-bottom: 10px; padding: 10px; width: 100%;"><br>
+        <input type="email" name="email" placeholder="Email Address" required style="display: block; margin-bottom: 10px; padding: 10px; width: 100%;"><br>
+        <textarea name="message" placeholder="Message" required style="display: block; margin-bottom: 10px; padding: 10px; width: 100%; height: 150px;"></textarea><br>
+        <button type="submit" style="padding: 10px 20px;">&rarr; Send Message</button>
+      </form>
+    </section>
+    <section>
+      <h2>A Closing Word</h2>
+      <p>Not all communication needs to lead somewhere.</p>
+      <p>Sometimes it is enough to be heard.</p>
+    </section>
+  </main>
+  <footer>
+    <div>
+      <h3>Stay Connected</h3>
+      <p>Private notes and updates are shared through the mailing list.</p>
+      <p><a href="/email-list">&rarr; Join the Mailing List</a></p>
+      <p>Books by Noah B. Price are available on Amazon.</p>
+      <p><a href="https://amazon.com">&rarr; Buy on Amazon</a></p>
+    </div>
+    <div>
+      <h3>Legal</h3>
+      <p><a href="/privacy">Privacy Policy</a></p>
+      <p><a href="/terms">Terms of Use</a></p>
+      <p><a href="/accessibility">Accessibility</a></p>
+    </div>
+    <p>&copy; 2026 Noah B. Price. All rights reserved.</p>
+  </footer>
+</body>
+</html>

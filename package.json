@@ -1,0 +1,16 @@
+{
+  "name": "accountability-archive",
+  "version": "1.0.0",
+  "description": "A website project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^2.0.2",
+    "particles.js": "^2.0.0",
+    "three": "^0.182.0",
+    "vanta": "^0.5.24"
+  }
+}
