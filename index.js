@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -101,7 +101,6 @@ app.post('/upload', upload.single('image'), (req, res) => {
 });
 
 // Upload audio (site music) and set as site's background loop audio
-const fs = require('fs');
 app.post('/upload-audio', upload.single('audio'), (req, res) => {
   if (req.file) {
     // Always save as site-music.mp3 (overwrite existing) to simplify player reference
