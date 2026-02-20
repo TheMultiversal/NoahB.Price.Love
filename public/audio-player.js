@@ -29,7 +29,8 @@
 
   // Helper to read a cache-buster set after upload so clients fetch the newest file
   function _getCacheBuster(){ try{ return localStorage.getItem('siteAudioCacheBuster') || ''; }catch(e){ return ''; } }
-  function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_SRC + (cb ? '?cb=' + cb : ''); }
+  // Resolve the current audio URL (basename + detected extension + cache-buster)
+  function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_BASENAME + AUDIO_EXT + (cb ? '?cb=' + cb : ''); }
 
   // Ensure we detect which extension to use, then create or update the audio element
   _detectAudioExt().then(ext => {
@@ -259,9 +260,24 @@
   // Also attempt immediate autoplay (muted autoplay usually allowed)
   tryAutoPlay();
 
-  // Save progress periodically
+  // Save progress periodically and enforce a 30:00 playback window (player-limited clip)
+  const CLIP_START = 0;           // clip start in seconds (user requested start)
+  const CLIP_DURATION = 30 * 60;  // 30 minutes
+  const CLIP_END = CLIP_START + CLIP_DURATION;
+
   audio.addEventListener('timeupdate', function(){
-    // throttle
+    try{
+      // If we've reached the requested clip end, stop and reset to clip start
+      if(typeof audio.currentTime === 'number' && audio.currentTime >= CLIP_END){
+        audio.pause();
+        try{ audio.currentTime = CLIP_START; }catch(e){}
+        saveState();
+        _updateCtlIcon();
+        return;
+      }
+    }catch(e){ /* ignore */ }
+
+    // throttle state saves
     if(!audio._lastSaved || (Date.now() - audio._lastSaved) > 1000){
       audio._lastSaved = Date.now();
       saveState();
@@ -276,7 +292,7 @@
   // If previously playing, try to resume
   if(state.playing){ tryAutoPlay(); }
 
-    // Expose a small debug in console
-    console.log('[AudioPlayer] Initialized (Turbo-aware). Src:', AUDIO_SRC);
+    // Expose a small debug in console (log actual resolved src)
+    console.log('[AudioPlayer] Initialized (Turbo-aware). Src:', (audio && audio.src) ? audio.src : _audioSrc());
   });
 })();
