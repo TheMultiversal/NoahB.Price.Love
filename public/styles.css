@@ -96,7 +96,7 @@ main.about-page p {
   max-width: 860px;
   margin-left: auto;
   margin-right: auto;
-  text-align: left; /* keep paragraphs left-aligned for readability */
+  text-align: center;
 }
 
 main.about-page h1, main.about-page h2 { text-align: center; }
