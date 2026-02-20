@@ -103,10 +103,16 @@ app.post('/upload', upload.single('image'), (req, res) => {
 // Upload audio (site music) and set as site's background loop audio
 app.post('/upload-audio', upload.single('audio'), (req, res) => {
   if (req.file) {
-    // Always save as site-music.mp3 (overwrite existing) to simplify player reference
-    const dest = path.join(__dirname, 'uploads', 'site-music.mp3');
+    // Preserve original extension when saving (supports .mp3 and .m4a)
+    const incomingExt = (path.extname(req.file.originalname) || '').toLowerCase();
+    const allowed = ['.mp3', '.m4a'];
+    const useExt = allowed.includes(incomingExt) ? incomingExt : '.mp3';
+    const dest = path.join(__dirname, 'uploads', 'site-music' + useExt);
     try {
       fs.copyFileSync(req.file.path, dest);
+      // remove the alternate extension if present
+      const other = path.join(__dirname, 'uploads', 'site-music' + (useExt === '.mp3' ? '.m4a' : '.mp3'));
+      try { if (fs.existsSync(other)) fs.unlinkSync(other); } catch(e){}
       res.send('Audio uploaded successfully: <a href="/uploads/' + path.basename(dest) + '">' + path.basename(dest) + '</a>');
     } catch (err) {
       console.error(err);
@@ -119,11 +125,17 @@ app.post('/upload-audio', upload.single('audio'), (req, res) => {
 
 // Endpoint to return a version identifier (mtime) for the site audio file so clients can cache-bust
 app.get('/audio-version', (req, res) => {
-  const f = path.join(__dirname, 'uploads', 'site-music.mp3');
-  fs.stat(f, (err, stat) => {
-    if(err) return res.json({ version: 0 });
-    return res.json({ version: stat.mtimeMs || (new Date(stat.mtime)).getTime() });
-  });
+  const candidates = ['site-music.mp3', 'site-music.m4a'];
+  for (const name of candidates) {
+    const f = path.join(__dirname, 'uploads', name);
+    try {
+      const stat = fs.statSync(f);
+      return res.json({ version: stat.mtimeMs || (new Date(stat.mtime)).getTime(), file: name });
+    } catch (err) {
+      /* try next */
+    }
+  }
+  return res.json({ version: 0 });
 });
 
 app.post('/subscribe', (req, res) => {
