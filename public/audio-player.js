@@ -8,8 +8,20 @@
   }
 
   _ready(function(){
-    const AUDIO_SRC = '/uploads/site-music.mp3'; // file created by /upload-audio
+    const AUDIO_BASENAME = '/uploads/site-music'; // try .mp3 first, then .m4a
     const STORAGE_KEY = 'siteAudioState';
+    // Resolve available extension (.mp3 or .m4a) by probing the server once per page load
+    let AUDIO_EXT = '.mp3';
+    async function _detectAudioExt(){
+      try{
+        const res = await fetch(AUDIO_BASENAME + '.mp3', { method: 'HEAD' });
+        if(res && res.ok) return '.mp3';
+        const res2 = await fetch(AUDIO_BASENAME + '.m4a', { method: 'HEAD' });
+        if(res2 && res2.ok) return '.m4a';
+      }catch(e){}
+      return '.mp3'; // fallback to .mp3 by default
+    }
+    function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_BASENAME + AUDIO_EXT + (cb ? '?cb=' + cb : ''); }
 
   // Reuse a persistent audio element if present (Turbo permanent). Create only if missing.
   let audio = document.getElementById('site-audio');
@@ -19,26 +31,42 @@
   function _getCacheBuster(){ try{ return localStorage.getItem('siteAudioCacheBuster') || ''; }catch(e){ return ''; } }
   function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_SRC + (cb ? '?cb=' + cb : ''); }
 
-  if(!audio){
-    audio = document.createElement('audio');
-    audio.id = 'site-audio';
-    audio.src = _audioSrc();
-    audio.loop = true;
-    audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
-    audio.style.display = 'none';
-    audio.volume = 0.9;
-    // mobile-friendly attributes
-    try{ audio.setAttribute('playsinline',''); audio.setAttribute('webkit-playsinline',''); audio.playsInline = true; }catch(e){}
-    document.body.appendChild(audio);
-  } else {
-    // Ensure src points to the uploaded file (with cache-bust)
-    const desiredSrc = _audioSrc();
-    if(!audio.src || audio.src.indexOf(AUDIO_SRC) === -1 || audio.src !== desiredSrc){
-      audio.src = desiredSrc;
-      try{ audio.load(); }catch(e){}
+  // Ensure we detect which extension to use, then create or update the audio element
+  _detectAudioExt().then(ext => {
+    AUDIO_EXT = ext;
+    if(!audio){
+      audio = document.createElement('audio');
+      audio.id = 'site-audio';
+      audio.src = _audioSrc();
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.crossOrigin = 'anonymous';
+      audio.style.display = 'none';
+      audio.volume = 0.9;
+      // mobile-friendly attributes
+      try{ audio.setAttribute('playsinline',''); audio.setAttribute('webkit-playsinline',''); audio.playsInline = true; }catch(e){}
+      document.body.appendChild(audio);
+    } else {
+      // Ensure src points to the uploaded file (with cache-bust)
+      const desiredSrc = _audioSrc();
+      if(!audio.src || audio.src.indexOf(AUDIO_BASENAME) === -1 || audio.src !== desiredSrc){
+        audio.src = desiredSrc;
+        try{ audio.load(); }catch(e){}
+      }
     }
-  }
+
+    // If audio fails to load (extension mismatch), try the other known extension once
+    audio.addEventListener('error', function onAudioError(){
+      if(AUDIO_EXT === '.mp3'){
+        AUDIO_EXT = '.m4a';
+        audio.src = _audioSrc();
+        try{ audio.load(); }catch(e){}
+      }
+      audio.removeEventListener('error', onAudioError);
+    });
+  }).catch(()=>{
+    // If detection fails, proceed with default src already set above
+  });
 
   // Ask server for the current audio file version (mtime) and update cache-buster automatically
   (function(){
