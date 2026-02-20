@@ -13,6 +13,27 @@ try {
   console.error('Could not ensure uploads directory', err);
 }
 
+// Seed uploads from packaged files when the persistent uploads volume is empty
+(function seedUploadsFromPackage(){
+  try{
+    const seeds = [
+      { src: path.join(__dirname, 'public', 'seed', 'site-music.m4a'), dest: path.join(__dirname, 'uploads', 'site-music.m4a') },
+      { src: path.join(__dirname, 'public', 'seed', 'site-music.mp3'), dest: path.join(__dirname, 'uploads', 'site-music.mp3') }
+    ];
+    seeds.forEach(s => {
+      try{
+        if(!fs.existsSync(s.src)) return; // no packaged seed
+        let needCopy = false;
+        try{
+          const st = fs.statSync(s.dest);
+          if(!st.size || st.size < 1024) needCopy = true; // placeholder or empty -> replace
+        }catch(e){ needCopy = true; } // dest missing -> copy
+        if(needCopy){ fs.copyFileSync(s.src, s.dest); console.log('[SeedUploads] copied', s.src, '->', s.dest); }
+      }catch(e){ console.error('[SeedUploads] error for', s.src, e); }
+    });
+  }catch(e){ console.error('[SeedUploads] failed', e); }
+})();
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
