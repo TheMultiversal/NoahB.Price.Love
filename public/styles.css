@@ -91,8 +91,8 @@ main {
 
 /* About page — slightly larger, more readable body text */
 main.about-page p {
-  font-size: 1.15rem; /* increased for readability (~18.4px) */
-  line-height: 1.9;
+  font-size: 1.25rem; /* larger for improved readability (~20px) */
+  line-height: 1.95;
   max-width: 860px;
   margin-left: auto;
   margin-right: auto;
