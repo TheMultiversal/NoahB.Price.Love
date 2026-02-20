@@ -89,6 +89,18 @@ main {
   z-index: 1;
 }
 
+/* About page — slightly larger, more readable body text */
+main.about-page p {
+  font-size: 1.05rem; /* ~16.8px */
+  line-height: 1.8;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left; /* keep paragraphs left-aligned for readability */
+}
+
+main.about-page h1, main.about-page h2 { text-align: center; }
+
 .hero p {
   font-size: 14px;
   line-height: 1.6;
