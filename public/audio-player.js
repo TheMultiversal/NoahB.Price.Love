@@ -253,7 +253,8 @@
     }catch(e){}
   }
 
-  ['click','touchstart','keydown','wheel','touchmove','touchend'].forEach(ev => {
+  // include scroll as a user interaction that should trigger playback/unmute
+  ['click','touchstart','keydown','wheel','touchmove','touchend','scroll'].forEach(ev => {
     window.addEventListener(ev, startOnGesture, { once: true, passive: true });
   });
 
