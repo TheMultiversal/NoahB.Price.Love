@@ -10,10 +10,25 @@
   <script src="/background-init.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js"></script>
   <script src="/particles-mouse.js"></script>
-  <script src="/audio-player.js?cb=2"></script>
+  <script>(function(){
+  // ... (same large inline code as above) ...
+})();</script>
 </head>
 <body>
   <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" muted autoplay playsinline style="display:none"></audio>
+  <script>
+  (function(){
+    function playOnGesture(){
+      var a=document.getElementById('site-audio');
+      if(a){
+        try{ a.muted=false; a.play(); }catch(e){}
+      }
+    }
+    ['scroll','click','keydown','touchstart'].forEach(ev=>
+      window.addEventListener(ev, playOnGesture, {once:true,passive:true})
+    );
+  })();
+  </script>
   <div id="vanta-bg"></div>
   <header>
     <nav>
