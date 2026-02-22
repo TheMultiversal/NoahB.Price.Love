@@ -131,6 +131,37 @@
 
   // Floating control (visible & interactive) — allows users to play/unmute immediately
   const ctl = document.createElement('button');
+
+  // Prompt overlay shown until first interaction; persuades user to scroll/click for sound
+  const prompt = document.createElement('div');
+  prompt.id = 'audio-start-prompt';
+  prompt.textContent = 'Scroll or tap anywhere to hear music';
+  Object.assign(prompt.style, {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    padding: '12px',
+    background: 'rgba(0,0,0,0.7)',
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: '16px',
+    zIndex: 2001,
+    cursor: 'pointer'
+  });
+  document.body.appendChild(prompt);
+
+  function hidePrompt(){
+    if(prompt && prompt.parentNode) prompt.parentNode.removeChild(prompt);
+  }
+
+  startOnGesture = (function(orig){
+    return function(e){
+      hidePrompt();
+      orig(e);
+    };
+  })(startOnGesture);
+
   ctl.id = 'site-audio-control';
   ctl.setAttribute('aria-label','Play or pause site audio');
   ctl.title = 'Play / Pause site audio';
@@ -257,6 +288,9 @@
   ['click','touchstart','keydown','wheel','touchmove','touchend','scroll'].forEach(ev => {
     window.addEventListener(ev, startOnGesture, { once: true, passive: true });
   });
+
+  // also hide prompt if page is scrolled programmatically or via other means
+  window.addEventListener('scroll', hidePrompt, { once: true, passive: true });
 
   // Also attempt immediate autoplay (muted autoplay usually allowed)
   tryAutoPlay();
