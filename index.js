@@ -13,7 +13,7 @@ try {
   console.error('Could not ensure uploads directory', err);
 }
 
-// Seed uploads from packaged files when the persistent uploads volume is empty
+// Seed uploads from packaged files on every startup, overwriting any existing audio so the latest seed is used
 (function seedUploadsFromPackage(){
   try{
     const seeds = [
@@ -22,13 +22,10 @@ try {
     ];
     seeds.forEach(s => {
       try{
-        if(!fs.existsSync(s.src)) return; // no packaged seed
-        let needCopy = false;
-        try{
-          const st = fs.statSync(s.dest);
-          if(!st.size || st.size < 1024) needCopy = true; // placeholder or empty -> replace
-        }catch(e){ needCopy = true; } // dest missing -> copy
-        if(needCopy){ fs.copyFileSync(s.src, s.dest); console.log('[SeedUploads] copied', s.src, '->', s.dest); }
+        if(fs.existsSync(s.src)){
+          fs.copyFileSync(s.src, s.dest);
+          console.log('[SeedUploads] copied (overwrite)', s.src, '->', s.dest);
+        }
       }catch(e){ console.error('[SeedUploads] error for', s.src, e); }
     });
   }catch(e){ console.error('[SeedUploads] failed', e); }
