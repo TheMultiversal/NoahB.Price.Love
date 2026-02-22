@@ -11,10 +11,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.min.js"></script>
   <script src="/nav.js"></script>
   <script src="/particles-mouse.js"></script>
-  <script src="/audio-player.js"></script>
+  <script src="/audio-player.js?cb=2"></script>
 </head>
 <body>
-  <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" style="display:none"></audio>
+  <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" muted autoplay playsinline style="display:none"></audio>
   <div id="vanta-bg"></div>
   <header>
     <button id="nav-toggle" class="nav-toggle" aria-controls="main-nav" aria-expanded="false">☰</button>
