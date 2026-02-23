@@ -50,7 +50,10 @@
     } else {
       // Ensure src points to the uploaded file (with cache-bust)
       const desiredSrc = _audioSrc();
-      if(!audio.src || audio.src.indexOf(AUDIO_BASENAME) === -1 || audio.src !== desiredSrc){
+      // compare only the path+query portion so that absolute vs relative mismatch doesn't trigger reload
+      const current = audio.src ? new URL(audio.src, window.location.href).pathname + new URL(audio.src, window.location.href).search : '';
+      const want = new URL(desiredSrc, window.location.href).pathname + new URL(desiredSrc, window.location.href).search;
+      if(!current || current.indexOf(AUDIO_BASENAME) === -1 || current !== want){
         audio.src = desiredSrc;
         try{ audio.load(); }catch(e){}
       }
@@ -79,7 +82,10 @@
           if(local !== sv){
             localStorage.setItem('siteAudioCacheBuster', sv);
             const newSrc = _audioSrc();
-            if(audio.src !== newSrc){
+            // avoid reload if only absolute/relative difference
+            const cur = audio.src ? new URL(audio.src, window.location.href).pathname + new URL(audio.src, window.location.href).search : '';
+            const want = new URL(newSrc, window.location.href).pathname + new URL(newSrc, window.location.href).search;
+            if(cur !== want){
               audio.src = newSrc;
               try{ audio.load(); }catch(e){}
             }
