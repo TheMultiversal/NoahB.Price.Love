@@ -347,20 +347,6 @@
 
 </head>
 <body>
-  <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" muted autoplay playsinline style="display:none"></audio>
-  <script>
-  (function(){
-    function playOnGesture(){
-      var a=document.getElementById('site-audio');
-      if(a){
-        try{ a.muted=false; a.play(); }catch(e){}
-      }
-    }
-    ['scroll','click','keydown','touchstart'].forEach(ev=>
-      window.addEventListener(ev, playOnGesture, {once:true,passive:true})
-    );
-  })();
-  </script>
   <div id="vanta-bg"></div>
   <header>
     <button id="nav-toggle" class="nav-toggle" aria-controls="main-nav" aria-expanded="false">☰</button>
