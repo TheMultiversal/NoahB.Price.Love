@@ -344,10 +344,13 @@
   document.addEventListener('turbo:before-cache', function(){ saveState(); });
 
   // If previously playing, try to resume
+  resumeIfNeeded();
+  });
+})();</script>
 
 </head>
 <body>
-  <div id="vanta-bg"></div>
+  <!-- removed vanta-bg div for debugging -->
   <header>
     <button id="nav-toggle" class="nav-toggle" aria-controls="main-nav" aria-expanded="false">☰</button>
     <nav>
