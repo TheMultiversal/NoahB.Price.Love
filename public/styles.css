@@ -114,7 +114,7 @@ main.about-page h1, main.about-page h2 { text-align: center; }
 
 .hero p {
   font-size: 1.2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem; /* tighter spacing between sentences */
 }
 
 .btn {
