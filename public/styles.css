@@ -109,7 +109,7 @@ main.about-page h1, main.about-page h2 { text-align: center; }
 
 .hero h1 {
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem; /* reduce gap between title and subtitle */
 }
 
 .hero p {
@@ -207,6 +207,7 @@ footer div {
 footer h3 {
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
+  color: white; /* override default dark heading color */
 }
 
 footer ul {
