@@ -89,7 +89,7 @@ main {
   z-index: 1;
 }
 
-/* About page — slightly larger, more readable body text */
+/* About page - slightly larger, more readable body text */
 main.about-page p {
   font-size: 1.25rem; /* larger for improved readability (~20px) */
   line-height: 1.95;

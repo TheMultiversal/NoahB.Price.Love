@@ -121,7 +121,7 @@
           saveState();
           _updateCtlIcon();
         }).catch(()=>{
-          // Could not autoplay (likely blocked) — leave state and control for user interaction
+          // Could not autoplay (likely blocked) - leave state and control for user interaction
           _updateCtlIcon();
         });
       } else {
@@ -142,7 +142,7 @@
 
   audio.dataset.siteAudioInitialized = '1';
 
-  // Floating control (visible & interactive) — allows users to play/unmute immediately
+  // Floating control (visible & interactive) - allows users to play/unmute immediately
   const ctl = document.createElement('button');
 
   // Prompt overlay shown until first interaction; persuades user to scroll/click for sound

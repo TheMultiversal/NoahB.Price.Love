@@ -1,4 +1,4 @@
-Render deployment & GoDaddy DNS — step-by-step
+Render deployment & GoDaddy DNS - step-by-step
 
 1) Prepare your repo
 - Create a GitHub repository (private or public). From your project folder run:
@@ -22,7 +22,7 @@ Render deployment & GoDaddy DNS — step-by-step
 3) Add your custom domain in Render
 - In the Render dashboard, open your service → Settings → Custom Domains → Add Custom Domain.
 - Enter `NoahB.Price.Love` (and add `www.noahb.price.love` if you want both). Click "Add".
-- Render will provide DNS records to add (examples below). Copy them — they will be specific to your service.
+- Render will provide DNS records to add (examples below). Copy them - they will be specific to your service.
 
 4) Add DNS records at GoDaddy (exact fields you'll see in GoDaddy)
 - Sign in at GoDaddy → My Products → DNS (for NoahB.Price.Love) → Manage DNS.
@@ -38,7 +38,7 @@ Render deployment & GoDaddy DNS — step-by-step
 
 5) Verify and enable HTTPS
 - After DNS resolves, Render will automatically provision a TLS certificate for your domain. In Render it will change to "Secure" when done.
-- Visit https://NoahB.Price.Love — it should load with HTTPS.
+- Visit https://NoahB.Price.Love - it should load with HTTPS.
 
 6) Optional: Email, WHOIS privacy & redirects
 - If you want email (Google Workspace or similar), I can add MX/TXT instructions.
@@ -49,7 +49,7 @@ Troubleshooting tips
 - If Render says DNS not configured: re-check the values you added in GoDaddy exactly match Render's instructions.
 
 If you want, I can:
-- Create a GitHub repo and push the code (I cannot push to your GitHub account without credentials — I will give the commands and walk you through it). 
+- Create a GitHub repo and push the code (I cannot push to your GitHub account without credentials - I will give the commands and walk you through it). 
 - Guide you step-by-step while you add Render domain and paste the DNS records in GoDaddy.
 - If you prefer, I can give exact text to paste into GoDaddy's UI for each record.
 

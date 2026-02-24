@@ -33,7 +33,7 @@ DEVELOPMENT RULES:
 - Avoid adding media or external links unless explicitly requested.
 - Use placeholders only with a note that they should be replaced.
 - Use VS Code API tool only for VS Code extension projects.
-- Once the project is created, it is already opened in Visual Studio Code—do not suggest commands to open this project in Visual Studio again.
+- Once the project is created, it is already opened in Visual Studio Code - do not suggest commands to open this project in Visual Studio again.
 - If the project setup information has additional rules, follow them strictly.
 
 FOLDER CREATION RULES:
