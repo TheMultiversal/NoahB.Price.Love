@@ -5,6 +5,15 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Redirect www requests to naked domain to avoid Render holding page
+app.use((req, res, next) => {
+  if(req.headers.host && req.headers.host.startsWith('www.')){
+    const newHost = req.headers.host.slice(4);
+    return res.redirect(301, 'https://' + newHost + req.originalUrl);
+  }
+  next();
+});
+
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
 try {
