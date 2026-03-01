@@ -331,9 +331,6 @@
   document.addEventListener('turbo:before-cache', function(){ saveState(); });
 
   // If previously playing, try to resume
-  if(state.playing){ tryAutoPlay(); }
-
-    // Expose a small debug in console (log actual resolved src)
-    console.log('[AudioPlayer] Initialized (Turbo-aware). Src:', (audio && audio.src) ? audio.src : _audioSrc());
+  resumeIfNeeded();
   });
 })();
