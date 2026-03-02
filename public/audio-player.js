@@ -1,337 +1,321 @@
 (function(){
-  // Initialize only when DOM is ready (prevents errors when scripts run in <head>)
-  function _ready(fn){
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', fn);
-    } else { fn(); }
-    document.addEventListener('turbo:load', fn);
+  /* ──────────────────────────────────────────────────────────────
+     Persistent site-wide audio player (Turbo Drive aware)
+     Music continues seamlessly across page navigations.
+     ─────────────────────────────────────────────────────────── */
+
+  var AUDIO_BASENAME = '/seed/site-music';
+  var STORAGE_KEY    = 'siteAudioState';
+  var CLIP_DURATION  = 30 * 60; // 30-minute playback window
+
+  // ── Helpers ─────────────────────────────────────────────────
+  function _getCacheBuster(){
+    try{ return localStorage.getItem('siteAudioCacheBuster') || ''; }catch(e){ return ''; }
   }
 
-  _ready(function(){
-    const AUDIO_BASENAME = '/seed/site-music'; // try .mp3 first, then .m4a
-    const STORAGE_KEY = 'siteAudioState';
-    // Resolve available extension (.mp3 or .m4a) by probing the server once per page load
-    let AUDIO_EXT = '.mp3';
-    async function _detectAudioExt(){
-      try{
-        const res = await fetch(AUDIO_BASENAME + '.mp3', { method: 'HEAD' });
-        if(res && res.ok) return '.mp3';
-        const res2 = await fetch(AUDIO_BASENAME + '.m4a', { method: 'HEAD' });
-        if(res2 && res2.ok) return '.m4a';
-      }catch(e){}
-      return '.mp3'; // fallback to .mp3 by default
-    }
-    function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_BASENAME + AUDIO_EXT + (cb ? '?cb=' + cb : ''); }
+  var _audioExt = null; // resolved once, then cached
 
-  // Reuse a persistent audio element if present (Turbo permanent). Create only if missing.
-  let audio = document.getElementById('site-audio');
-  const createdHere = !audio;
+  function _audioSrc(){
+    var ext = _audioExt || '.m4a';
+    var cb  = _getCacheBuster();
+    return AUDIO_BASENAME + ext + (cb ? '?cb=' + cb : '');
+  }
 
-  // Helper to read a cache-buster set after upload so clients fetch the newest file
-  function _getCacheBuster(){ try{ return localStorage.getItem('siteAudioCacheBuster') || ''; }catch(e){ return ''; } }
-  // Resolve the current audio URL (basename + detected extension + cache-buster)
-  function _audioSrc(){ const cb = _getCacheBuster(); return AUDIO_BASENAME + AUDIO_EXT + (cb ? '?cb=' + cb : ''); }
+  function _detectAudioExt(){
+    if(_audioExt) return Promise.resolve(_audioExt);
+    return fetch(AUDIO_BASENAME + '.mp3', { method: 'HEAD' })
+      .then(function(r){ if(r && r.ok){ _audioExt = '.mp3'; return '.mp3'; } return Promise.reject(); })
+      .catch(function(){
+        return fetch(AUDIO_BASENAME + '.m4a', { method: 'HEAD' })
+          .then(function(r){ if(r && r.ok){ _audioExt = '.m4a'; return '.m4a'; } _audioExt = '.m4a'; return '.m4a'; })
+          .catch(function(){ _audioExt = '.m4a'; return '.m4a'; });
+      });
+  }
 
-  // Ensure we detect which extension to use, then create or update the audio element
-  _detectAudioExt().then(ext => {
-    AUDIO_EXT = ext;
-    if(!audio){
-      audio = document.createElement('audio');
-      audio.id = 'site-audio';
-      audio.setAttribute('data-turbo-permanent', '');
-      audio.src = _audioSrc();
-      audio.loop = true;
-      audio.preload = 'auto';
-      audio.crossOrigin = 'anonymous';
-      audio.style.display = 'none';
-      audio.volume = 0.9;
-      // mobile-friendly attributes
-      try{ audio.setAttribute('playsinline',''); audio.setAttribute('webkit-playsinline',''); audio.playsInline = true; }catch(e){}
-      document.body.appendChild(audio);
-    } else {
-      // Ensure src points to the uploaded file (with cache-bust)
-      const desiredSrc = _audioSrc();
-      // compare only the path+query portion so that absolute vs relative mismatch doesn't trigger reload
-      const current = audio.src ? new URL(audio.src, window.location.href).pathname + new URL(audio.src, window.location.href).search : '';
-      const want = new URL(desiredSrc, window.location.href).pathname + new URL(desiredSrc, window.location.href).search;
-      if(!current || current.indexOf(AUDIO_BASENAME) === -1 || current !== want){
-        audio.src = desiredSrc;
-        try{ audio.load(); }catch(e){}
-      }
-    }
+  // ── State persistence ──────────────────────────────────────
+  function _loadState(){
+    try{ var s = localStorage.getItem(STORAGE_KEY); if(s) return JSON.parse(s); }catch(e){}
+    return { playing: false, time: 0, unmuted: false };
+  }
 
-    // If audio fails to load (extension mismatch), try the other known extension once
-    audio.addEventListener('error', function onAudioError(){
-      if(AUDIO_EXT === '.mp3'){
-        AUDIO_EXT = '.m4a';
-        audio.src = _audioSrc();
-        try{ audio.load(); }catch(e){}
-      }
-      audio.removeEventListener('error', onAudioError);
-    });
-  }).catch(()=>{
-    // If detection fails, proceed with default src already set above
-  });
-
-  // Ask server for the current audio file version (mtime) and update cache-buster automatically
-  (function(){
-    fetch('/audio-version').then(r => r.json()).then(j => {
-      if(j && j.version){
-        try{
-          const sv = String(j.version);
-          const local = String(localStorage.getItem('siteAudioCacheBuster') || '');
-          if(local !== sv){
-            localStorage.setItem('siteAudioCacheBuster', sv);
-            const newSrc = _audioSrc();
-            // avoid reload if only absolute/relative difference
-            const cur = audio.src ? new URL(audio.src, window.location.href).pathname + new URL(audio.src, window.location.href).search : '';
-            const want = new URL(newSrc, window.location.href).pathname + new URL(newSrc, window.location.href).search;
-            if(cur !== want){
-              audio.src = newSrc;
-              try{ audio.load(); }catch(e){}
-            }
-          }
-        }catch(e){}
-      }
-    }).catch(()=>{});
-  })();
-
-  // Helper to resume playback/unmute based on saved state. Non-blocking and tolerant of autoplay policies.
-  function resumeIfNeeded(){
+  function _saveState(audio){
     try{
-      const s = localStorage.getItem(STORAGE_KEY);
-      if(!s) return;
-      const st = JSON.parse(s);
-      // Restore unmuted preference immediately if user previously unmuted
-      if(st.unmuted){
-        try{ audio.muted = false; }catch(e){}
-      }
-      // Restore time if needed
-      try{ if(typeof st.time === 'number' && !isNaN(st.time)) audio.currentTime = st.time; }catch(e){}
-      // If previously playing, try to play (may be blocked by browser if no gesture; that's fine)
-      if(st.playing){
-        audio.play().then(()=>{
-          // playing resumed
-          saveState();
-          _updateCtlIcon();
-        }).catch(()=>{
-          // Could not autoplay (likely blocked) - leave state and control for user interaction
-          _updateCtlIcon();
-        });
-      } else {
-        _updateCtlIcon();
-      }
-    }catch(e){ console.warn('[AudioPlayer] resumeIfNeeded failed', e); }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        playing: !audio.paused,
+        time:    audio.currentTime,
+        unmuted: !audio.muted
+      }));
+    }catch(e){}
   }
 
-  // If this audio element has already been initialized, avoid reattaching event listeners
-  if(audio.dataset.siteAudioInitialized === '1'){
-    // On re-run (new page), ensure saved desired state is respected (resume if needed)
-    resumeIfNeeded();
-    return;
+  // ── UI: floating control button ────────────────────────────
+  var _ctl = null;
+
+  function _ensureControl(audio){
+    if(_ctl && document.body.contains(_ctl)) return;
+    _ctl = document.createElement('button');
+    _ctl.id = 'site-audio-control';
+    _ctl.setAttribute('data-turbo-permanent','');
+    _ctl.setAttribute('aria-label','Play or pause site audio');
+    _ctl.title = 'Play / Pause site audio';
+    _ctl.innerHTML = '\u{1F508}';
+    Object.assign(_ctl.style, {
+      position:'fixed', right:'16px', bottom:'16px', zIndex:'2000',
+      width:'44px', height:'44px', borderRadius:'50%', border:'none',
+      background:'#2c3e50', color:'#fff', cursor:'pointer',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      fontSize:'18px', boxShadow:'0 2px 8px rgba(0,0,0,0.2)',
+      opacity:'0.95', pointerEvents:'auto'
+    });
+    document.body.appendChild(_ctl);
+
+    _ctl.addEventListener('click', function(e){
+      e.preventDefault();
+      try{
+        if(audio.muted){ audio.muted = false; _saveState(audio); }
+        if(audio.paused){
+          audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
+                      .catch(function(){ _updateIcon(audio); });
+        } else {
+          audio.pause(); _saveState(audio); _updateIcon(audio);
+        }
+      }catch(err){}
+    });
   }
 
-  // Also ensure we attempt resume on Turbo navigations
-  document.addEventListener('turbo:load', function(){ resumeIfNeeded(); });
-
-  audio.dataset.siteAudioInitialized = '1';
-
-  // Floating control (visible & interactive) - allows users to play/unmute immediately
-  const ctl = document.createElement('button');
-
-  // Prompt overlay shown until first interaction; persuades user to scroll/click for sound
-  const prompt = document.createElement('div');
-  prompt.id = 'audio-start-prompt';
-  prompt.textContent = 'Scroll or tap anywhere to hear music';
-  Object.assign(prompt.style, {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    padding: '12px',
-    background: 'rgba(0,0,0,0.7)',
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: '16px',
-    zIndex: 2001,
-    cursor: 'pointer'
-  });
-  document.body.appendChild(prompt);
-
-  function hidePrompt(){
-    if(prompt && prompt.parentNode) prompt.parentNode.removeChild(prompt);
-  }
-
-  startOnGesture = (function(orig){
-    return function(e){
-      hidePrompt();
-      orig(e);
-    };
-  })(startOnGesture);
-
-  ctl.id = 'site-audio-control';
-  ctl.setAttribute('aria-label','Play or pause site audio');
-  ctl.title = 'Play / Pause site audio';
-  ctl.innerHTML = '🔈';
-  Object.assign(ctl.style, {
-    position: 'fixed',
-    right: '16px',
-    bottom: '16px',
-    zIndex: 2000,
-    width: '44px',
-    height: '44px',
-    borderRadius: '50%',
-    border: 'none',
-    background: '#2c3e50',
-    color: '#fff',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-    opacity: '0.95',
-    pointerEvents: 'auto'
-  });
-  document.body.appendChild(ctl);
-
-  // Update button icon/text based on state
-  function _updateCtlIcon(){
+  function _updateIcon(audio){
+    if(!_ctl) return;
     try{
       if(audio.paused){
-        ctl.innerHTML = '⏵'; // play
-        ctl.title = 'Play site audio';
+        _ctl.innerHTML = '\u23F5'; _ctl.title = 'Play site audio';
       } else if(audio.muted){
-        ctl.innerHTML = '🔈'; // muted
-        ctl.title = 'Unmute site audio';
+        _ctl.innerHTML = '\u{1F508}'; _ctl.title = 'Unmute site audio';
       } else {
-        ctl.innerHTML = '🔊'; // playing & unmuted
-        ctl.title = 'Pause site audio';
+        _ctl.innerHTML = '\u{1F50A}'; _ctl.title = 'Pause site audio';
       }
     }catch(e){}
   }
 
-  // Toggle behaviour: click toggles play/pause and unmutes if muted
-  ctl.addEventListener('click', function(e){
-    e.preventDefault();
+  // ── UI: initial prompt banner ──────────────────────────────
+  var _prompt = null;
+
+  function _showPrompt(){
+    if(_prompt && document.body.contains(_prompt)) return;
+    _prompt = document.createElement('div');
+    _prompt.id = 'audio-start-prompt';
+    _prompt.setAttribute('data-turbo-permanent','');
+    _prompt.textContent = 'Scroll or tap anywhere to hear music';
+    Object.assign(_prompt.style, {
+      position:'fixed', top:'0', left:'0', right:'0',
+      padding:'12px', background:'rgba(0,0,0,0.7)', color:'#fff',
+      textAlign:'center', fontSize:'16px', zIndex:'2001', cursor:'pointer'
+    });
+    document.body.appendChild(_prompt);
+  }
+
+  function _hidePrompt(){
+    if(_prompt && _prompt.parentNode) _prompt.parentNode.removeChild(_prompt);
+    _prompt = null;
+  }
+
+  // ── Fade helper ────────────────────────────────────────────
+  function _fadeVolume(audio, to, ms){
     try{
-      if(audio.muted){
-        audio.muted = false;
-        saveState();
-      }
-      if(audio.paused){
-        audio.play().then(()=>{ saveState(); _updateCtlIcon(); }).catch(()=>{ _updateCtlIcon(); });
-      } else {
-        audio.pause();
-        saveState();
-        _updateCtlIcon();
-      }
-    }catch(err){
-      console.error('[AudioPlayer] Control click error', err);
-    }
-  });
-
-  // Update icon on audio events
-  audio.addEventListener('play', _updateCtlIcon);
-  audio.addEventListener('pause', _updateCtlIcon);
-  audio.addEventListener('volumechange', _updateCtlIcon);
-
-  // Load saved state (includes unmuted preference)
-  let state = { playing: false, time: 0, unmuted: false };
-  try{ const s = localStorage.getItem(STORAGE_KEY); if(s) state = JSON.parse(s); } catch(e){}
-
-  // Apply stored time only if we created the element here and time is available
-  if(createdHere && state.time){
-    try{ audio.currentTime = state.time || 0; }catch(e){}
-  }
-
-  // Apply mute/unmute preference: default to muted unless user previously unmuted
-  try{
-    if(state.unmuted){ audio.muted = false; } else { audio.muted = true; }
-  }catch(e){}
-
-  function saveState(){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ playing: !audio.paused, time: audio.currentTime, unmuted: !audio.muted })); }catch(e){}
-  }
-
-  // Try autoplay quietly on load (muted autoplay is generally allowed)
-  function tryAutoPlay(){
-    audio.play().then(()=>{ saveState(); }).catch(()=>{});
-  }
-
-  // Fade-in helper: ramp volume from current to target over ms
-  function _fadeVolume(to, ms){
-    try{
-      var start = audio.volume;
-      var startT = Date.now();
+      var start = audio.volume, startT = Date.now();
       if(ms <= 0){ audio.volume = to; return; }
-      function step(){
+      (function step(){
         var t = (Date.now() - startT) / ms;
         if(t >= 1){ audio.volume = to; return; }
         audio.volume = start + (to - start) * t;
         requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
+      })();
     }catch(e){}
   }
 
-  // Start playback and unmute on first meaningful user interaction (click, touchstart, keydown, wheel, touchmove)
-  function startOnGesture(){
-    try{
-      // Unmute on first gesture if muted - apply soft fade-in
-      if(audio.muted){
-        audio.muted = false;
-        var target = 0.9;
-        try{ audio.volume = 0; }catch(e){}
-        saveState();
-        audio.play().then(()=>{ _fadeVolume(target, 800); saveState(); }).catch(()=>{/* still blocked */});
-      } else {
-        audio.play().then(()=>{ saveState(); }).catch(()=>{/* still blocked */});
-      }
-    }catch(e){}
-  }
+  // ══════════════════════════════════════════════════════════════
+  //  CORE: one-time initialisation (runs EXACTLY ONCE)
+  // ══════════════════════════════════════════════════════════════
+  var _initialised = false;
 
-  // include scroll as a user interaction that should trigger playback/unmute
-  ['click','touchstart','keydown','wheel','touchmove','touchend','scroll'].forEach(ev => {
-    window.addEventListener(ev, startOnGesture, { once: true, passive: true });
-  });
+  function _init(){
+    if(_initialised) return;
+    _initialised = true;
 
-  // also hide prompt if page is scrolled programmatically or via other means
-  window.addEventListener('scroll', hidePrompt, { once: true, passive: true });
-
-  // Also attempt immediate autoplay (muted autoplay usually allowed)
-  tryAutoPlay();
-
-  // Save progress periodically and enforce a 30:00 playback window (player-limited clip)
-  const CLIP_START = 0;           // clip start in seconds (user requested start)
-  const CLIP_DURATION = 30 * 60;  // 30 minutes
-  const CLIP_END = CLIP_START + CLIP_DURATION;
-
-  audio.addEventListener('timeupdate', function(){
-    try{
-      // If we've reached the requested clip end, stop and reset to clip start
-      if(typeof audio.currentTime === 'number' && audio.currentTime >= CLIP_END){
-        audio.pause();
-        try{ audio.currentTime = CLIP_START; }catch(e){}
-        saveState();
-        _updateCtlIcon();
-        return;
-      }
-    }catch(e){ /* ignore */ }
-
-    // throttle state saves
-    if(!audio._lastSaved || (Date.now() - audio._lastSaved) > 1000){
-      audio._lastSaved = Date.now();
-      saveState();
+    var audio = document.getElementById('site-audio');
+    if(!audio){
+      audio = document.createElement('audio');
+      audio.id = 'site-audio';
+      audio.setAttribute('data-turbo-permanent','');
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.style.display = 'none';
+      audio.volume = 0.9;
+      try{ audio.setAttribute('playsinline',''); audio.playsInline = true; }catch(e){}
+      document.body.appendChild(audio);
     }
-  });
 
-  // On unload / before caching (Turbo) save time
-  window.addEventListener('pagehide', function(){ saveState(); });
-  window.addEventListener('beforeunload', function(){ saveState(); });
-  document.addEventListener('turbo:before-cache', function(){ saveState(); });
+    var state = _loadState();
 
-  // If previously playing, try to resume
-  resumeIfNeeded();
+    // Restore mute preference
+    try{ audio.muted = !state.unmuted; }catch(e){}
+
+    // Detect extension → set src ONCE, preserving saved time
+    _detectAudioExt().then(function(){
+      var desired = _audioSrc();
+      var currentPath = '';
+      try{ currentPath = new URL(audio.src, location.href).pathname + new URL(audio.src, location.href).search; }catch(e){}
+      var wantPath = '';
+      try{ wantPath = new URL(desired, location.href).pathname + new URL(desired, location.href).search; }catch(e){}
+
+      if(!currentPath || currentPath !== wantPath){
+        var savedTime = state.time || 0;
+        audio.src = desired;
+        if(savedTime > 0){
+          audio.addEventListener('loadedmetadata', function onMeta(){
+            audio.removeEventListener('loadedmetadata', onMeta);
+            try{ audio.currentTime = savedTime; }catch(e){}
+          }, { once: true });
+        }
+        try{ audio.load(); }catch(e){}
+      } else {
+        // src correct — restore time directly
+        try{ if(state.time > 0) audio.currentTime = state.time; }catch(e){}
+      }
+
+      // Fallback: if mp3 fails, try m4a
+      audio.addEventListener('error', function onErr(){
+        if(_audioExt === '.mp3'){
+          _audioExt = '.m4a';
+          audio.src = _audioSrc();
+          try{ audio.load(); }catch(e){}
+        }
+        audio.removeEventListener('error', onErr);
+      });
+
+      // Try autoplay (muted autoplay usually allowed)
+      if(state.playing){
+        audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
+                    .catch(function(){ _updateIcon(audio); });
+      } else {
+        audio.play().then(function(){ _saveState(audio); }).catch(function(){});
+      }
+    }).catch(function(){});
+
+    // Check audio version once (cache buster for next visit, no reload now)
+    fetch('/audio-version').then(function(r){ return r.json(); }).then(function(j){
+      if(j && j.version){
+        try{
+          var sv = String(j.version);
+          var local = String(localStorage.getItem('siteAudioCacheBuster') || '');
+          if(local !== sv) localStorage.setItem('siteAudioCacheBuster', sv);
+        }catch(e){}
+      }
+    }).catch(function(){});
+
+    // ── UI setup ───────────────────────────────────────────
+    _ensureControl(audio);
+    _showPrompt();
+
+    // Gesture: unmute + play on first user interaction
+    var gestureHandled = false;
+    function _onGesture(){
+      if(gestureHandled) return;
+      gestureHandled = true;
+      _hidePrompt();
+      try{
+        if(audio.muted){
+          audio.muted = false;
+          var target = 0.9;
+          try{ audio.volume = 0; }catch(e){}
+          _saveState(audio);
+          audio.play().then(function(){ _fadeVolume(audio, target, 800); _saveState(audio); _updateIcon(audio); })
+                      .catch(function(){ _updateIcon(audio); });
+        } else if(audio.paused){
+          audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
+                      .catch(function(){ _updateIcon(audio); });
+        }
+      }catch(e){}
+    }
+
+    ['click','touchstart','keydown','wheel','touchmove','touchend','scroll'].forEach(function(ev){
+      window.addEventListener(ev, _onGesture, { once: true, passive: true });
+    });
+    window.addEventListener('scroll', _hidePrompt, { once: true, passive: true });
+
+    // ── Audio events ───────────────────────────────────────
+    audio.addEventListener('play',  function(){ _updateIcon(audio); });
+    audio.addEventListener('pause', function(){ _updateIcon(audio); });
+    audio.addEventListener('volumechange', function(){ _updateIcon(audio); });
+
+    // Periodic save + clip enforcement
+    audio.addEventListener('timeupdate', function(){
+      try{
+        if(typeof audio.currentTime === 'number' && audio.currentTime >= CLIP_DURATION){
+          audio.pause();
+          try{ audio.currentTime = 0; }catch(e){}
+          _saveState(audio); _updateIcon(audio);
+          return;
+        }
+      }catch(e){}
+      if(!audio._lastSaved || (Date.now() - audio._lastSaved) > 1000){
+        audio._lastSaved = Date.now();
+        _saveState(audio);
+      }
+    });
+
+    // Save on page hide / Turbo cache
+    window.addEventListener('pagehide',    function(){ _saveState(audio); });
+    window.addEventListener('beforeunload', function(){ _saveState(audio); });
+    document.addEventListener('turbo:before-cache', function(){ _saveState(audio); });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  TURBO NAVIGATION: resume only — NO re-init, NO src changes
+  // ══════════════════════════════════════════════════════════════
+  function _onTurboNav(){
+    var audio = document.getElementById('site-audio');
+    if(!audio) return;
+
+    // Re-attach UI if Turbo dropped them
+    _ensureControl(audio);
+
+    var state = _loadState();
+
+    // Restore mute preference
+    try{ if(state.unmuted) audio.muted = false; }catch(e){}
+
+    // If already playing, leave it alone
+    if(!audio.paused){
+      _updateIcon(audio);
+      return;
+    }
+
+    // Restore time position (only if significantly different)
+    try{
+      if(typeof state.time === 'number' && !isNaN(state.time) && Math.abs(audio.currentTime - state.time) > 2){
+        audio.currentTime = state.time;
+      }
+    }catch(e){}
+
+    // Resume if it was playing before navigation
+    if(state.playing){
+      audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
+                  .catch(function(){ _updateIcon(audio); });
+    } else {
+      _updateIcon(audio);
+    }
+  }
+
+  // ── Bootstrap ──────────────────────────────────────────────
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', _init);
+  } else {
+    _init();
+  }
+
+  // Turbo navigations: resume only (never re-init)
+  document.addEventListener('turbo:load', function(){
+    if(!_initialised) _init();
+    else _onTurboNav();
   });
 })();

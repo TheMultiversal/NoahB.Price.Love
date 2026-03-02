@@ -11,6 +11,8 @@
     { "source": "/all-journals", "destination": "/all-journals.html" },
     { "source": "/journal/:entry", "destination": "/journals/:entry.html" },
     { "source": "/contact", "destination": "/contact.html" },
+    { "source": "/humanitarian", "destination": "/humanitarian.html" },
+    { "source": "/donate", "destination": "/donate.html" },
     { "source": "/email-list", "destination": "/email-list.html" },
     { "source": "/upload", "destination": "/upload.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
