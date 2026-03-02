@@ -22,7 +22,7 @@
   }
 
   _ready(function(){
-    const AUDIO_BASENAME = '/uploads/site-music'; // try .mp3 first, then .m4a
+    const AUDIO_BASENAME = '/seed/site-music'; // try .mp3 first, then .m4a
     const STORAGE_KEY = 'siteAudioState';
     // Resolve available extension (.mp3 or .m4a) by probing the server once per page load
     let AUDIO_EXT = '.mp3';
@@ -342,7 +342,7 @@
 </head>
 <body>
   <div class="preview-banner"><strong>Preview:</strong> This page shows the updated About content (not yet live at /about on the site edge).</div>
-  <audio id="site-audio" data-turbo-permanent src="/uploads/site-music.mp3" loop preload="auto" muted autoplay playsinline style="display:none"></audio>
+  <audio id="site-audio" data-turbo-permanent src="/seed/site-music.m4a" loop preload="auto" muted autoplay playsinline style="display:none"></audio>
   <script>
   (function(){
     function playOnGesture(){

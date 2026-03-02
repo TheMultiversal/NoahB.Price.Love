@@ -1,0 +1,37 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/books", "destination": "/books.html" },
+    { "source": "/books/:book", "destination": "/books/:book/index.html" },
+    { "source": "/books/:book/:edition", "destination": "/books/:book/:edition.html" },
+    { "source": "/blog", "destination": "/blog.html" },
+    { "source": "/latest-entry", "destination": "/latest-entry.html" },
+    { "source": "/all-journals", "destination": "/all-journals.html" },
+    { "source": "/journal/:entry", "destination": "/journals/:entry.html" },
+    { "source": "/contact", "destination": "/contact.html" },
+    { "source": "/email-list", "destination": "/email-list.html" },
+    { "source": "/upload", "destination": "/upload.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/accessibility", "destination": "/accessibility.html" },
+    { "source": "/audio-version", "destination": "/api/audio-version" },
+    { "source": "/subscribe", "destination": "/api/subscribe" },
+    { "source": "/upload-audio", "destination": "/api/upload-audio" }
+  ],
+  "headers": [
+    {
+      "source": "/seed/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
