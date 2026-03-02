@@ -38,6 +38,7 @@
     if(!audio){
       audio = document.createElement('audio');
       audio.id = 'site-audio';
+      audio.setAttribute('data-turbo-permanent', '');
       audio.src = _audioSrc();
       audio.loop = true;
       audio.preload = 'auto';
