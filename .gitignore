@@ -6,3 +6,4 @@ uploads/
 coverage/
 npm-debug.log
 .loca.lt
+.vercel
