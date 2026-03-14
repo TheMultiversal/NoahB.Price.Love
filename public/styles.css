@@ -301,3 +301,78 @@ button {
 button:hover {
   background-color: #22313f;
 }
+
+/* ── Family grid & cards ── */
+.family-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.family-card {
+  border: 2px solid #2c3e50;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 0 15px rgba(44,62,80,0.3);
+  background: rgba(255,255,255,0.05);
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.family-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(44,62,80,0.4);
+}
+
+.family-photo-placeholder {
+  width: 100%;
+  height: 200px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-style: italic;
+  margin-bottom: 1rem;
+  border: 1px dashed rgba(255,255,255,0.2);
+}
+
+/* ── Photo/receipt gallery ── */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.gallery img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.gallery img:hover {
+  transform: scale(1.03);
+}
+
+/* ── Video section ── */
+.video-section video {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
+
+/* ── Donate button accent ── */
+.donate-btn {
+  background-color: #27ae60;
+  font-size: 1.1rem;
+  padding: 0.85rem 2rem;
+}
+
+.donate-btn:hover {
+  background-color: #1e8449;
+}
