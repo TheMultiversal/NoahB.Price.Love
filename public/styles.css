@@ -339,6 +339,22 @@ button:hover {
   border: 1px dashed rgba(255,255,255,0.2);
 }
 
+/* ── Book cover placeholder ── */
+.book-cover-placeholder {
+  width: 150px;
+  height: 220px;
+  background: rgba(255,255,255,0.08);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-style: italic;
+  font-size: 0.85rem;
+  margin: 0 auto 0.5rem;
+}
+
 /* ── Photo/receipt gallery ── */
 .gallery {
   display: grid;
