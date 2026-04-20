@@ -63,10 +63,22 @@
       e.preventDefault();
       e.stopPropagation();
       try{
+        var wasPaused = audio.paused;
+        var wasMuted = audio.muted;
+
         if(!audio.src || audio.src === location.href){
           audio.src = _audioSrc();
           audio.load();
         }
+
+        if(!wasPaused && wasMuted){
+          audio.muted = false;
+          audio.volume = 0.9;
+          _saveState(audio);
+          _updateIcon(audio);
+          return;
+        }
+
         audio.muted = false;
         audio.volume = 0.9;
 
