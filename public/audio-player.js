@@ -73,53 +73,42 @@
     _ctl.addEventListener('click', function(e){
       e.preventDefault();
       e.stopPropagation();
-      console.log('Audio button clicked');
       try{
-        // Ensure audio has a source
         if(!audio.src || audio.src === location.href){
           audio.src = _audioSrc();
           audio.load();
         }
-        if(audio.muted){
-          audio.muted = false;
-          _saveState(audio);
-          _updateIcon(audio);
+        audio.muted = false;
+        audio.volume = 0.9;
 
-          if(audio.paused){
-            audio.volume = 0.9;
-            var attemptPlay = function(){
-              audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
-                          .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
-            };
-            if(audio.readyState >= 2){
-              attemptPlay();
-            } else {
-              audio.addEventListener('canplay', function onCan(){
-                audio.removeEventListener('canplay', onCan);
-                attemptPlay();
-              });
-            }
-          }
-          return;
-        }
+        var playAudio = function(){
+          audio.play().then(function(){
+            _saveState(audio);
+            _updateIcon(audio);
+          }).catch(function(err){
+            console.log('Audio play failed:', err);
+            _updateIcon(audio);
+          });
+        };
+
         if(audio.paused){
-          audio.volume = 0.9;
-          // Wait for audio to be ready before playing
-          if(audio.readyState >= 2){
-            audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
-                        .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
-          } else {
+          if(audio.readyState < 2){
             audio.addEventListener('canplay', function onCan(){
               audio.removeEventListener('canplay', onCan);
-              audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
-                          .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
+              playAudio();
             });
+            try{ audio.load(); }catch(e){ console.log('Audio load failed:', e); }
+          } else {
+            playAudio();
           }
         } else {
-          audio.pause(); _saveState(audio); _updateIcon(audio);
+          audio.pause();
+          _saveState(audio);
+          _updateIcon(audio);
         }
-        _saveState(audio);
-      }catch(err){ console.log('Audio control error:', err); }
+      }catch(err){
+        console.log('Audio control error:', err);
+      }
     });
   }
 
