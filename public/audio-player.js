@@ -83,8 +83,17 @@
         if(audio.muted){ audio.muted = false; }
         if(audio.paused){
           audio.volume = 0.9;
-          audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
-                      .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
+          // Wait for audio to be ready before playing
+          if(audio.readyState >= 2){
+            audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
+                        .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
+          } else {
+            audio.addEventListener('canplay', function onCan(){
+              audio.removeEventListener('canplay', onCan);
+              audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
+                          .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
+            });
+          }
         } else {
           audio.pause(); _saveState(audio); _updateIcon(audio);
         }
