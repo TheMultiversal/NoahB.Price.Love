@@ -167,10 +167,29 @@
       audio.setAttribute('data-turbo-permanent','');
       audio.loop = true;
       audio.preload = 'auto';
-      audio.style.display = 'none';
+      audio.controls = true;
+      audio.style.position = 'fixed';
+      audio.style.bottom = '84px';
+      audio.style.right = '16px';
+      audio.style.zIndex = '9999';
+      audio.style.width = '220px';
+      audio.style.maxWidth = 'calc(100% - 32px)';
+      audio.style.background = '#fff';
+      audio.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
       audio.volume = 0.9;
       try{ audio.setAttribute('playsinline',''); audio.playsInline = true; }catch(e){}
       document.body.appendChild(audio);
+    } else {
+      audio.controls = true;
+      audio.style.display = 'block';
+      audio.style.position = 'fixed';
+      audio.style.bottom = '84px';
+      audio.style.right = '16px';
+      audio.style.zIndex = '9999';
+      audio.style.width = '220px';
+      audio.style.maxWidth = 'calc(100% - 32px)';
+      audio.style.background = '#fff';
+      audio.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
     }
 
     var state = _loadState();
