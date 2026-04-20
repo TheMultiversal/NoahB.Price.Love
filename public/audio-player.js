@@ -84,6 +84,22 @@
           audio.muted = false;
           _saveState(audio);
           _updateIcon(audio);
+
+          if(audio.paused){
+            audio.volume = 0.9;
+            var attemptPlay = function(){
+              audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
+                          .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
+            };
+            if(audio.readyState >= 2){
+              attemptPlay();
+            } else {
+              audio.addEventListener('canplay', function onCan(){
+                audio.removeEventListener('canplay', onCan);
+                attemptPlay();
+              });
+            }
+          }
           return;
         }
         if(audio.paused){
