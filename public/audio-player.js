@@ -98,6 +98,7 @@
               playAudio();
             });
             try{ audio.load(); }catch(e){ console.log('Audio load failed:', e); }
+            playAudio();
           } else {
             playAudio();
           }
@@ -265,14 +266,14 @@
           audio.play().then(function(){ _fadeVolume(audio, target, 800); _saveState(audio); _updateIcon(audio); })
                       .catch(function(){ _updateIcon(audio); });
         };
-        // If audio isn't ready yet, wait for it
+        // Attempt playback immediately, then use canplay as a fallback
         if(audio.readyState < 2){
           audio.addEventListener('canplay', function onCan(){
             audio.removeEventListener('canplay', onCan);
             doPlay();
           });
-          // Also try loading again in case it stalled
           try{ audio.load(); }catch(e){}
+          doPlay();
         } else {
           doPlay();
         }
