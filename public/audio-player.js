@@ -13,23 +13,11 @@
     try{ return localStorage.getItem('siteAudioCacheBuster') || ''; }catch(e){ return ''; }
   }
 
-  var _audioExt = null; // resolved once, then cached
+  var _audioExt = '.m4a';
 
   function _audioSrc(){
-    var ext = _audioExt || '.m4a';
-    var cb  = _getCacheBuster();
-    return AUDIO_BASENAME + ext + (cb ? '?cb=' + cb : '');
-  }
-
-  function _detectAudioExt(){
-    if(_audioExt) return Promise.resolve(_audioExt);
-    return fetch(AUDIO_BASENAME + '.mp3', { method: 'HEAD' })
-      .then(function(r){ if(r && r.ok){ _audioExt = '.mp3'; return '.mp3'; } return Promise.reject(); })
-      .catch(function(){
-        return fetch(AUDIO_BASENAME + '.m4a', { method: 'HEAD' })
-          .then(function(r){ if(r && r.ok){ _audioExt = '.m4a'; return '.m4a'; } _audioExt = '.m4a'; return '.m4a'; })
-          .catch(function(){ _audioExt = '.m4a'; return '.m4a'; });
-      });
+    var cb = _getCacheBuster();
+    return AUDIO_BASENAME + _audioExt + (cb ? '?cb=' + cb : '');
   }
 
   // ── State persistence ──────────────────────────────────────
@@ -59,14 +47,15 @@
     _ctl.setAttribute('data-turbo-permanent','');
     _ctl.setAttribute('aria-label','Play or pause site audio');
     _ctl.title = 'Play / Pause site audio';
-    _ctl.innerHTML = '\u{1F508}';
+    _ctl.innerHTML = '🔈';
+    _ctl.tabIndex = 0;
     Object.assign(_ctl.style, {
       position:'fixed', right:'16px', bottom:'16px', zIndex:'9999',
       width:'44px', height:'44px', borderRadius:'50%', border:'none',
       background:'#2c3e50', color:'#fff', cursor:'pointer',
       display:'flex', alignItems:'center', justifyContent:'center',
       fontSize:'18px', boxShadow:'0 2px 8px rgba(0,0,0,0.2)',
-      opacity:'0.95', pointerEvents:'auto'
+      opacity:'0.95', pointerEvents:'auto', outline:'none'
     });
     document.body.appendChild(_ctl);
 
@@ -117,11 +106,11 @@
     if(!_ctl) return;
     try{
       if(audio.paused){
-        _ctl.innerHTML = '\u23F5'; _ctl.title = 'Play site audio';
+        _ctl.innerHTML = '▶'; _ctl.title = 'Play site audio';
       } else if(audio.muted){
-        _ctl.innerHTML = '\u{1F508}'; _ctl.title = 'Unmute site audio';
+        _ctl.innerHTML = '🔇'; _ctl.title = 'Unmute site audio';
       } else {
-        _ctl.innerHTML = '\u{1F50A}'; _ctl.title = 'Pause site audio';
+        _ctl.innerHTML = '⏸'; _ctl.title = 'Pause site audio';
       }
     }catch(e){}
   }
@@ -189,8 +178,7 @@
     // Restore mute preference
     try{ audio.muted = !state.unmuted; }catch(e){}
 
-    // Detect extension → set src ONCE, preserving saved time
-    _detectAudioExt().then(function(){
+// Set the known audio source and preserve saved position
       var desired = _audioSrc();
       var currentPath = '';
       try{ currentPath = new URL(audio.src, location.href).pathname + new URL(audio.src, location.href).search; }catch(e){}
@@ -212,16 +200,6 @@
         try{ if(state.time > 0) audio.currentTime = state.time; }catch(e){}
       }
 
-      // Fallback: if mp3 fails, try m4a
-      audio.addEventListener('error', function onErr(){
-        if(_audioExt === '.mp3'){
-          _audioExt = '.m4a';
-          audio.src = _audioSrc();
-          try{ audio.load(); }catch(e){}
-        }
-        audio.removeEventListener('error', onErr);
-      });
-
       // Try autoplay (muted autoplay usually allowed)
       audio.muted = true; // ensure muted for autoplay policy
       audio.play().then(function(){
@@ -230,7 +208,6 @@
         // Autoplay blocked — that's OK, gesture handler will start it
         _updateIcon(audio);
       });
-    }).catch(function(){});
 
     // Check audio version once (cache buster for next visit, no reload now)
     fetch('/audio-version').then(function(r){ return r.json(); }).then(function(j){
