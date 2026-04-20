@@ -43,4 +43,9 @@ nav ul li a {
   z-index: 0;
   pointer-events: none;
 }
+#particles-js, #vanta-bg,
+#particles-js *, #vanta-bg *,
+#particles-js canvas, #vanta-bg canvas {
+  pointer-events: none !important;
+}
 

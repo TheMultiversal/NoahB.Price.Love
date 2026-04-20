@@ -55,12 +55,13 @@
     if(_ctl && document.body.contains(_ctl)) return;
     _ctl = document.createElement('button');
     _ctl.id = 'site-audio-control';
+    _ctl.type = 'button';
     _ctl.setAttribute('data-turbo-permanent','');
     _ctl.setAttribute('aria-label','Play or pause site audio');
     _ctl.title = 'Play / Pause site audio';
     _ctl.innerHTML = '\u{1F508}';
     Object.assign(_ctl.style, {
-      position:'fixed', right:'16px', bottom:'16px', zIndex:'2000',
+      position:'fixed', right:'16px', bottom:'16px', zIndex:'9999',
       width:'44px', height:'44px', borderRadius:'50%', border:'none',
       background:'#2c3e50', color:'#fff', cursor:'pointer',
       display:'flex', alignItems:'center', justifyContent:'center',
@@ -71,15 +72,24 @@
 
     _ctl.addEventListener('click', function(e){
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Audio button clicked');
       try{
-        if(audio.muted){ audio.muted = false; _saveState(audio); }
+        // Ensure audio has a source
+        if(!audio.src || audio.src === location.href){
+          audio.src = _audioSrc();
+          audio.load();
+        }
+        if(audio.muted){ audio.muted = false; }
         if(audio.paused){
-          audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
-                      .catch(function(){ _updateIcon(audio); });
+          audio.volume = 0.9;
+          audio.play().then(function(){ console.log('Audio play success'); _saveState(audio); _updateIcon(audio); })
+                      .catch(function(err){ console.log('Audio play failed:', err); _updateIcon(audio); });
         } else {
           audio.pause(); _saveState(audio); _updateIcon(audio);
         }
-      }catch(err){}
+        _saveState(audio);
+      }catch(err){ console.log('Audio control error:', err); }
     });
   }
 
@@ -193,12 +203,13 @@
       });
 
       // Try autoplay (muted autoplay usually allowed)
-      if(state.playing){
-        audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
-                    .catch(function(){ _updateIcon(audio); });
-      } else {
-        audio.play().then(function(){ _saveState(audio); }).catch(function(){});
-      }
+      audio.muted = true; // ensure muted for autoplay policy
+      audio.play().then(function(){
+        _saveState(audio); _updateIcon(audio);
+      }).catch(function(){
+        // Autoplay blocked — that's OK, gesture handler will start it
+        _updateIcon(audio);
+      });
     }).catch(function(){});
 
     // Check audio version once (cache buster for next visit, no reload now)
@@ -223,17 +234,30 @@
       gestureHandled = true;
       _hidePrompt();
       try{
-        if(audio.muted){
-          audio.muted = false;
-          var target = 0.9;
-          try{ audio.volume = 0; }catch(e){}
-          _saveState(audio);
+        // Ensure audio has a source and is loaded
+        if(!audio.src || audio.src === location.href){
+          audio.src = _audioSrc();
+          audio.load();
+        }
+        audio.muted = false;
+        var target = 0.9;
+        try{ audio.volume = 0; }catch(e){}
+        var doPlay = function(){
           audio.play().then(function(){ _fadeVolume(audio, target, 800); _saveState(audio); _updateIcon(audio); })
                       .catch(function(){ _updateIcon(audio); });
-        } else if(audio.paused){
-          audio.play().then(function(){ _saveState(audio); _updateIcon(audio); })
-                      .catch(function(){ _updateIcon(audio); });
+        };
+        // If audio isn't ready yet, wait for it
+        if(audio.readyState < 2){
+          audio.addEventListener('canplay', function onCan(){
+            audio.removeEventListener('canplay', onCan);
+            doPlay();
+          });
+          // Also try loading again in case it stalled
+          try{ audio.load(); }catch(e){}
+        } else {
+          doPlay();
         }
+        _saveState(audio);
       }catch(e){}
     }
 
